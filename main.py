@@ -397,10 +397,15 @@ class UI:
         self.tasks_textbox.tag_add("sel", "insert linestart", "insert lineend")
         self.tasks_textbox.tag_configure("sel", background="black")
         try:
-            self.task = self.tasks_textbox.selection_get()
-            self.task_move_inprogress_button.configure(state="normal")
-            self.inprogress_move_tasks.configure(state="disabled")
-            self.action.configure(text=f"Task '{self.tasks_textbox.selection_get()}' selected")
+            with open (f"data/projects/{self.project}/tasks.txt") as file:
+                texts = file.read()
+                if self.tasks_textbox.selection_get() in texts:
+                    self.task = self.tasks_textbox.selection_get()
+                    self.task_move_inprogress_button.configure(state="normal")
+                    self.inprogress_move_tasks.configure(state="disabled")
+                    self.action.configure(text=f"Task '{self.tasks_textbox.selection_get()}' selected")
+                else:
+                    self.action.configure(text="Clicked on empty spot on task window")
         except:
             self.task = ""
             self.task_move_inprogress_button.configure(state="disabled")
