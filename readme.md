@@ -1,7 +1,5 @@
 # Python practice
 
--project manager
+-Project manager: Login screen, username/password data protection was not part of this practice, data saved in '.txt' file. Add, mark done and remove projects. Show tasks for projects: tasks, in progress and done.
 
--tkinter ui
-
--missing functionality: when looking at done projects: selectin project gives wrong text on top and doesn't show tasks in project.
+-Using Tkinter for gui
