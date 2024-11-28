@@ -102,6 +102,10 @@ class UI:
         self.projects_textbox.tag_config("sel", background="black")
 
         self.task_move_inprogress_button.configure(state="disabled")
+        self.inprogress_move_tasks.configure(state="disabled")
+        self.inprogress_move_done.configure(state="disabled")
+        self.done_move_inprogress.configure(state="disabled")
+
         self.inprogress_textbox.configure(state="normal")
         self.tasks_textbox.configure(state="normal")
         self.done_textbox.configure(state="normal")
@@ -245,6 +249,11 @@ class UI:
         self.inprogress_move_tasks.place_forget()
         self.inprogress_move_done.place_forget()
         self.done_move_inprogress.place_forget()
+
+        self.task_move_inprogress_button.configure(state="disabled")
+        self.inprogress_move_tasks.configure(state="disabled")
+        self.inprogress_move_done.configure(state="disabled")
+        self.done_move_inprogress.configure(state="disabled")
     
     # Add new project button click
     def click_new_p(self):
@@ -403,6 +412,8 @@ class UI:
                     self.task = self.tasks_textbox.selection_get()
                     self.task_move_inprogress_button.configure(state="normal")
                     self.inprogress_move_tasks.configure(state="disabled")
+                    self.inprogress_move_done.configure(state="disabled")
+                    self.done_move_inprogress.configure(state="disabled")
                     self.action.configure(text=f"Task '{self.tasks_textbox.selection_get()}' selected")
                 else:
                     self.action.configure(text="Clicked on empty spot on task window")
@@ -413,16 +424,42 @@ class UI:
     def select_inprogress_line(self, event=None):
         self.inprogress_textbox.tag_add("sel", "insert linestart", "insert lineend")
         self.inprogress_textbox.tag_configure("sel", background="black")
-        self.action.configure(text=f"In progress task '{self.inprogress_textbox.selection_get()}' selected")
-        self.task = self.inprogress_textbox.selection_get()
-        
-        self.task_move_inprogress_button.configure(state="disabled")
-        self.inprogress_move_tasks.configure(state="normal")
+        try:
+            with open (f"data/projects/{self.project}/inprogress.txt") as file:
+                texts = file.read()
+                if self.inprogress_textbox.selection_get() in texts:
+                    self.task = self.inprogress_textbox.selection_get()
+                    self.task_move_inprogress_button.configure(state="disabled")
+                    self.inprogress_move_tasks.configure(state="normal")
+                    self.inprogress_move_done.configure(state="normal")
+                    self.done_move_inprogress.configure(state="disabled")
+                    self.action.configure(text=f"In progress task '{self.inprogress_textbox.selection_get()}' selected")
+                else:
+                    self.action.configure(text="Clicked on empty spot on task window")
+        except:
+            self.task = ""
+            self.inprogress_move_tasks.configure(state="disabled")
+            self.inprogress_move_done.configure(state="disabled")
+            self.action.configure(text="Clicked on empty spot on in progress window")
     def select_done_line(self, event=None):
         self.done_textbox.tag_add("sel", "insert linestart", "insert lineend")
         self.done_textbox.tag_configure("sel", background="black")
-        self.action.configure(text=f"Done task '{self.done_textbox.selection_get()}' selected")
-        self.task = self.done_textbox.selection_get()
+        try:
+            with open (f"data/projects/{self.project}/done.txt") as file:
+                texts = file.read()
+                if self.done_textbox.selection_get() in texts:
+                    self.task = self.done_textbox.selection_get()
+                    self.task_move_inprogress_button.configure(state="disabled")
+                    self.inprogress_move_tasks.configure(state="disabled")
+                    self.inprogress_move_done.configure(state="disabled")
+                    self.done_move_inprogress.configure(state="normal")
+                    self.action.configure(text=f"Done task '{self.inprogress_textbox.selection_get()}' selected")
+                else:
+                    self.action.configure(text="Clicked on empty spot on done window")
+        except:
+            self.task = ""
+            self.done_move_inprogress.configure(state="disabled")
+            self.action.configure(text="Clicked on empty spot on done window")
 
     # Move tasks to in progress button
     def click_task_to_inprog(self):
@@ -455,21 +492,129 @@ class UI:
 
             self.tasks_textbox.configure(state="disabled")
             self.inprogress_textbox.configure(state="disabled")
-            self.action.configure(text=f"Task {self.task} moved to in progress")
+            self.action.configure(text=f"Task '{self.task}' moved to in progress")
             self.task = ""
+            self.task_move_inprogress_button.configure(state="disabled")
         elif self.task == "" or self.project == "":
             self.action.configure(text="No project or task selected")
 
 
     # Move in progress to tasks button
     def click_inprog_to_task(self):
-        print("inprogress to task")
+        if self.task != "" and self.project != "":
+            self.tasks_textbox.configure(state="normal")
+            self.inprogress_textbox.configure(state="normal")
+            with open (f"data/projects/{self.project}/tasks.txt", "a") as file:
+                task_name = self.task.split(" - ")
+                task = task_name[0]
+                file.write(f"{task}\n")
+            with open (f"data/projects/{self.project}/inprogress.txt") as file:
+                content = file.read()
+                update = content.replace(self.task, "")
+            with open (f"data/projects/{self.project}/inprogress.txt", "w") as file:
+                file.write(update)
+            rows =[]
+            with open (f"data/projects/{self.project}/inprogress.txt") as file:
+                for row in file:
+                    if row != "\n":
+                        rows.append(row)
+            with open (f"data/projects/{self.project}/inprogress.txt", "w") as file:
+                for row in rows:
+                    file.write(row)
+            self.tasks_textbox.delete("0.0", "end")
+            self.inprogress_textbox.delete("0.0", "end")
+            with open (f"data/projects/{self.project}/tasks.txt") as file:
+                tasks = file.read()
+                self.tasks_textbox.insert("0.0", tasks)
+            with open (f"data/projects/{self.project}/inprogress.txt") as file:
+                inprogress = file.read()
+                self.inprogress_textbox.insert("0.0", inprogress)
+
+            self.tasks_textbox.configure(state="disabled")
+            self.inprogress_textbox.configure(state="disabled")
+            self.action.configure(text=f"In progress task '{self.task}' moved to tasks")
+            self.task = ""
+            self.inprogress_move_tasks.configure(state="disabled")
+            self.inprogress_move_done.configure(state="disabled")
+        elif self.task == "" or self.project == "":
+            self.action.configure(text="No project or task selected")
+
     # move in progress to done button
     def click_inprog_to_done(self):
-        print("inprogress to done")
+        if self.task != "" and self.project != "":
+            self.inprogress_textbox.configure(state="normal")
+            self.done_textbox.configure(state="normal")
+            with open (f"data/projects/{self.project}/done.txt", "a") as file:
+                task_name = self.task.split(" - ")
+                task = task_name[0]
+                file.write(f"{task}\n")
+            with open (f"data/projects/{self.project}/inprogress.txt") as file:
+                content = file.read()
+                update = content.replace(self.task, "")
+            with open (f"data/projects/{self.project}/inprogress.txt", "w") as file:
+                file.write(update)
+            rows =[]
+            with open (f"data/projects/{self.project}/inprogress.txt") as file:
+                for row in file:
+                    if row != "\n":
+                        rows.append(row)
+            with open (f"data/projects/{self.project}/inprogress.txt", "w") as file:
+                for row in rows:
+                    file.write(row)
+            self.done_textbox.delete("0.0", "end")
+            self.inprogress_textbox.delete("0.0", "end")
+            with open (f"data/projects/{self.project}/done.txt") as file:
+                tasks = file.read()
+                self.done_textbox.insert("0.0", tasks)
+            with open (f"data/projects/{self.project}/inprogress.txt") as file:
+                inprogress = file.read()
+                self.inprogress_textbox.insert("0.0", inprogress)
+
+            self.inprogress_textbox.configure(state="disabled")
+            self.done_textbox.configure(state="disabled")
+            self.action.configure(text=f"In progress task '{self.task}' moved to done")
+            self.task = ""
+            self.inprogress_move_tasks.configure(state="disabled")
+            self.inprogress_move_done.configure(state="disabled")
+        elif self.task == "" or self.project == "":
+            self.action.configure(text="No project or task selected")
+
     # move done to in progress button
     def click_done_to_inprog(self):
-        print("done to inprogress")
+        if self.task != "" and self.project != "":
+            self.inprogress_textbox.configure(state="normal")
+            self.done_textbox.configure(state="normal")
+            with open (f"data/projects/{self.project}/inprogress.txt", "a") as file:
+                file.write(f"{self.task} - {self.username}\n")
+            with open (f"data/projects/{self.project}/done.txt") as file:
+                content = file.read()
+                update = content.replace(self.task, "")
+            with open (f"data/projects/{self.project}/done.txt", "w") as file:
+                file.write(update)
+            rows =[]
+            with open (f"data/projects/{self.project}/done.txt") as file:
+                for row in file:
+                    if row != "\n":
+                        rows.append(row)
+            with open (f"data/projects/{self.project}/done.txt", "w") as file:
+                for row in rows:
+                    file.write(row)
+            self.inprogress_textbox.delete("0.0", "end")
+            self.done_textbox.delete("0.0", "end")
+            with open (f"data/projects/{self.project}/done.txt") as file:
+                tasks = file.read()
+                self.done_textbox.insert("0.0", tasks)
+            with open (f"data/projects/{self.project}/inprogress.txt") as file:
+                inprogress = file.read()
+                self.inprogress_textbox.insert("0.0", inprogress)
+
+            self.inprogress_textbox.configure(state="disabled")
+            self.done_textbox.configure(state="disabled")
+            self.action.configure(text=f"Done task '{self.task}' moved to in progress")
+            self.task = ""
+            self.done_move_inprogress.configure(state="disabled")
+        elif self.task == "" or self.project == "":
+            self.action.configure(text="No project or task selected")
 
     # Logout button click
     def click_logout(self):
@@ -506,6 +651,9 @@ class UI:
         self.done_label.place_forget()
         self.done_textbox.place_forget()
         self.done_move_inprogress.place_forget()
+
+        self.project_markundone_button.place_forget()
+        self.project_remove_button.place_forget()
 
         self.logout_button.place_forget()
 
