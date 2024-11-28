@@ -1,8 +1,6 @@
 import tkinter, os
 import ctypes as ct
-import tkinter.messagebox
 import tkinter.scrolledtext
-import tkinter.simpledialog
 
 # Make title bar dark, code from: https://stackoverflow.com/questions/23836000/can-i-change-the-title-bar-in-tkinter
 def dark_title_bar(window):
@@ -47,10 +45,13 @@ class UI:
 
         self.add_new_user_button = tkinter.Button(self.app, text="New user", bg="gray", fg="white", command=self.click_new_user)
 
+        self.user_entry.bind("<Return>", self.click_login)
+        self.passw_entry.bind("<Return>", self.click_login)
+
         self.show_login()
 
     # Login button click
-    def click_login(self):
+    def click_login(self, event=None):
         user = False
         with open ("data/users.txt") as file:
             for row in file:
@@ -114,24 +115,43 @@ class UI:
         self.inprogress_textbox.delete("1.0", tkinter.END)
         self.done_textbox.delete("1.0", tkinter.END)
         
-        try:
-            self.project = self.projects_textbox.selection_get()
-            with open (f"data/projects/{self.projects_textbox.selection_get()}/tasks.txt") as file:
-                for row in file:
-                    self.tasks_textbox.insert(tkinter.INSERT, row)   
+        if self.active_project == True:
+            try:
+                self.project = self.projects_textbox.selection_get()
+                with open (f"data/projects/{self.projects_textbox.selection_get()}/tasks.txt") as file:
+                    for row in file:
+                        self.tasks_textbox.insert(tkinter.INSERT, row)   
             
-            with open (f"data/projects/{self.projects_textbox.selection_get()}/inprogress.txt") as file:
-                for row in file:
-                    self.inprogress_textbox.insert(tkinter.INSERT, row)
+                with open (f"data/projects/{self.projects_textbox.selection_get()}/inprogress.txt") as file:
+                    for row in file:
+                        self.inprogress_textbox.insert(tkinter.INSERT, row)
             
-            with open (f"data/projects/{self.projects_textbox.selection_get()}/done.txt") as file:
-                for row in file:
-                    self.done_textbox.insert(tkinter.INSERT, row)
-            self.action.configure(text=f"Showing '{self.projects_textbox.selection_get()}' project tasks")
-        except:
-            self.project = ""
-            self.action.configure(text="Clicked on empty spot on projects window")
-        
+                with open (f"data/projects/{self.projects_textbox.selection_get()}/done.txt") as file:
+                    for row in file:
+                        self.done_textbox.insert(tkinter.INSERT, row)
+                self.action.configure(text=f"Showing '{self.projects_textbox.selection_get()}' project tasks")
+            except:
+                self.project = ""
+                self.action.configure(text="Clicked on empty spot on projects window")
+        elif self.active_project == False:
+            try:
+                self.project = self.projects_textbox.selection_get()
+                with open (f"data/done_projects/{self.projects_textbox.selection_get()}/tasks.txt") as file:
+                    for row in file:
+                        self.tasks_textbox.insert(tkinter.INSERT, row)   
+            
+                with open (f"data/done_projects/{self.projects_textbox.selection_get()}/inprogress.txt") as file:
+                    for row in file:
+                        self.inprogress_textbox.insert(tkinter.INSERT, row)
+            
+                with open (f"data/done_projects/{self.projects_textbox.selection_get()}/done.txt") as file:
+                    for row in file:
+                        self.done_textbox.insert(tkinter.INSERT, row)
+                self.action.configure(text=f"Showing '{self.projects_textbox.selection_get()}' project tasks")
+            except:
+                self.project = ""
+                self.action.configure(text="Clicked on empty spot on projects window")
+
         self.tasks_textbox.configure(state="disabled")
         self.inprogress_textbox.configure(state="disabled")
         self.done_textbox.configure(state="disabled")
@@ -141,6 +161,7 @@ class UI:
         self.do = ""
         self.project = ""
         self.task = ""
+        self.active_project = True
         self.active_projects_button = tkinter.Button(self.app, relief="sunken", text="Active", bg="gray", fg="white", height=1, width=5, command=self.click_ap, state="disabled")
         self.done_projects_button = tkinter.Button(self.app, relief="raised", text="Done", bg="gray", fg="white", height=1, width=5, command=self.click_dp) 
         self.projects_label = tkinter.Label(self.app, font=("consolas", 14, "bold"), text="Projects", bg="#2e2e2e", fg="white")
@@ -170,13 +191,38 @@ class UI:
         
         self.logout_button = tkinter.Button(self.app, text="Logout", bg="gray", fg="white", command=self.click_logout)
 
+        # Scrollbars
+        self.projects_scroll = tkinter.Scrollbar(self.projects_textbox)
+        self.projects_scroll.place(relx=0.86, rely=0, relheight=1)
+        self.projects_scroll.config(command=self.projects_textbox.yview)
+        self.projects_textbox.config(state="disabled", yscrollcommand = self.projects_scroll.set)
+        
+        self.tasks_scroll = tkinter.Scrollbar(self.tasks_textbox)
+        self.tasks_scroll.place(relx=0.86, rely=0, relheight=1)
+        self.tasks_scroll.config(command=self.tasks_textbox.yview)
+        self.tasks_textbox.config(state="disabled", yscrollcommand = self.tasks_scroll.set)
+
+        self.inprogress_scroll = tkinter.Scrollbar(self.inprogress_textbox)
+        self.inprogress_scroll.place(relx=0.86, rely=0, relheight=1)
+        self.inprogress_scroll.config(command=self.inprogress_textbox.yview)
+        self.inprogress_textbox.config(state="disabled", yscrollcommand = self.inprogress_scroll.set)
+
+        self.done_scroll = tkinter.Scrollbar(self.done_textbox)
+        self.done_scroll.place(relx=0.86, rely=0, relheight=1)
+        self.done_scroll.config(command=self.done_textbox.yview)
+        self.done_textbox.config(state="disabled", yscrollcommand = self.done_scroll.set)
+
+        ##
+
          # Select with single click 2/2
         self.projects_textbox.bind("<ButtonRelease>", self.select_line)
         self.tasks_textbox.bind("<ButtonRelease>", self.select_task_line)
         self.inprogress_textbox.bind("<ButtonRelease>", self.select_inprogress_line)
         self.done_textbox.bind("<ButtonRelease>", self.select_done_line)
+        self.entrybox.bind("<Return>", self.click_ok)
 
     # Add active projects to projects textbox
+        self.projects_textbox.configure(state="normal")
         for row in os.listdir("data/projects"):
             row = row + "\n"
             self.projects_textbox.insert(tkinter.INSERT, row)
@@ -184,6 +230,7 @@ class UI:
 
     # Active projects button click
     def click_ap(self):
+        self.active_project = True
         self.action.configure(text="Opened active projects")
         self.projects_textbox.configure(state="normal")
         self.projects_textbox.delete("1.0", tkinter.END)
@@ -218,6 +265,7 @@ class UI:
 
     # Done projects button click
     def click_dp(self):
+        self.active_project = False
         self.action.configure(text="Opened done projects")
         self.projects_textbox.configure(state="normal")
         self.projects_textbox.delete("1.0", tkinter.END)
@@ -279,7 +327,7 @@ class UI:
         self.action.configure(text="Adding new project")
 
     # Ok button click
-    def click_ok(self):
+    def click_ok(self, event=None):
         if self.do == "project":
             try:
                 if self.entrybox.get() != "":
@@ -291,7 +339,7 @@ class UI:
                         pass
                     with open (f"data/projects/{self.entrybox.get()}/done.txt", "w") as file:
                         pass
-                    self.projects_textbox.insert(tkinter.INSERT, self.entrybox.get())
+                    self.projects_textbox.insert("end", f"{self.entrybox.get()}\n")
 
                     self.entrybox.place_forget()
                     self.entrybox_ok_button.place_forget()
@@ -350,7 +398,7 @@ class UI:
             self.projects_textbox.configure(state="normal")
             self.select_project = self.projects_textbox.selection_get()
             os.replace(f"data/projects/{self.select_project}", f"data/done_projects/{self.select_project}")
-            self.projects_textbox.delete("1.0", tkinter.END)
+            self.projects_textbox.delete("0.0", tkinter.END)
             for row in os.listdir("data/projects"):
                 row = row + "\n"
                 self.projects_textbox.insert(tkinter.INSERT, row)
@@ -364,12 +412,13 @@ class UI:
     def click_notdone_p(self):
         try:
             self.projects_textbox.configure(state="normal")
-            os.replace(f"data/done_projects/{self.projects_textbox.selection_get()}", f"data/projects/{self.select_project}")
-            self.projects_textbox.delete("1.0", tkinter.END)
+            self.select_project = self.projects_textbox.selection_get()
+            os.replace(f"data/done_projects/{self.select_project}", f"data/projects/{self.select_project}")
+            self.projects_textbox.delete("0.0", tkinter.END)
             for row in os.listdir("data/done_projects"):
                 row = row + "\n"
                 self.projects_textbox.insert(tkinter.INSERT, row)
-            self.action.configure(text=f"Project: {self.projects_textbox.selection_get()} moved to active")
+            self.action.configure(text=f"Project: {self.select_project} moved to active")
             self.projects_textbox.configure(state="disabled")
         except:
             self.action.configure(text="No project selected")
@@ -379,12 +428,16 @@ class UI:
     def click_remove_p(self):
         try:
             self.projects_textbox.configure(state="normal")
-            os.rmdir(f"data/done_projects/{self.projects_textbox.selection_get()}")
-            self.projects_textbox.delete("1.0", tkinter.END)
+            self.select_project = self.projects_textbox.selection_get()
+            os.remove(f"data/done_projects/{self.select_project}/tasks.txt")
+            os.remove(f"data/done_projects/{self.select_project}/inprogress.txt")
+            os.remove(f"data/done_projects/{self.select_project}/done.txt")
+            os.rmdir(f"data/done_projects/{self.select_project}")
+            self.projects_textbox.delete("0.0", tkinter.END)
             for row in os.listdir("data/done_projects"):
                 row = row + "\n"
                 self.projects_textbox.insert(tkinter.INSERT, row)
-            self.action.configure(text=f"Project: {self.projects_textbox.selection_get()} deleted")
+            self.action.configure(text=f"Project: {self.select_project} deleted")
             self.projects_textbox.configure(state="disabled")
         except:
             self.action.configure(text="No project selected")
